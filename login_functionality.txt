@@ -1,0 +1,413 @@
+.model small
+.stack 100h
+.data
+    email db 50 dup(?)
+    password db 50 dup(?)
+    email1 db 50 dup(?)
+    password1 db 50 dup(?)      
+    
+    s_chars db '!@#$%^&*()_+-=[]{}|;:,.<>?' 
+    
+    domain db '@gmail.com$'
+    display1 db 'Enter email: $'
+    display2 db 'Enter password: $' 
+    
+    msg1 db 'Invalid email. Must contain "@gmail.com"$'
+    msg2 db 'Weak password. Must be 8+ chars with upper, lower, digit, and special char.$'
+    
+    msg3 db 'Signup successful.$'
+    msg4 db 'Please log in.$'
+    msg5 db 'Login successful.$'
+    msg6 db 'Login failed. Try again.$'
+    
+
+.code
+main proc
+    mov ax, @data
+    mov ds, ax
+
+    call signup
+    call login
+
+    mov ah,4ch
+    int 21h
+main endp
+
+signup proc
+    lea dx,display1
+    mov ah,9
+    int 21h
+
+    lea si,email
+    call str
+
+    call wemail
+    jc wmail
+
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl, 0Dh
+    int 21h   
+    
+    lea dx,display2
+    mov ah, 9
+    int 21h
+
+    lea si, password
+    call str
+
+    call validatepass
+    jc weakpass
+
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl, 0Dh
+    int 21h
+    lea dx, msg3
+    mov ah, 9
+    int 21h
+    ret
+
+wmail:
+    lea dx,msg1
+    mov ah, 9
+    int 21h 
+    
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl, 0Dh
+    int 21h
+    
+    jmp signup
+
+weakpass:
+    lea dx,msg2
+    mov ah, 9
+    int 21h
+    
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl, 0Dh
+    int 21h
+    
+    jmp signup
+signup endp
+
+login proc
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl, 0Dh
+        int 21h
+        lea dx, msg4
+        mov ah, 9
+        int 21h
+        
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl, 0Dh
+        int 21h
+    
+        lea dx,display1
+        mov ah, 9
+        int 21h
+    
+        lea si,email1
+        call str
+    
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl, 0Dh
+        int 21h
+        lea dx,display2
+        mov ah, 9
+        int 21h
+    
+        lea si,password1
+        call str
+    
+        lea si,email
+        lea di,email1
+        call compare_str
+        jnz loopa
+    
+        lea si,password
+        lea di,password1
+        call compare_str
+        jnz loopa
+    
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl, 0Dh
+        int 21h
+        lea dx, msg5
+        mov ah, 9
+        int 21h
+        
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl,0Dh
+        int 21h
+        
+        ret
+    
+    loopa:
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl, 0Dh
+        int 21h
+        lea dx, msg6
+        mov ah, 9
+        int 21h
+        
+        mov ah,2
+        mov dl,0Ah
+        int 21h
+        mov dl,0Dh
+        int 21h 
+        
+        jmp login
+login endp
+
+str proc
+        push ax
+        push cx 
+        
+    read_char:
+        mov ah,1
+        int 21h
+        cmp al,13 
+        je end_read
+        mov [si],al
+        add si,1
+        jmp read_char
+        
+    end_read:
+        mov byte ptr [si],'$'
+        pop cx
+        pop ax
+        ret
+str endp
+
+wemail proc
+        push si
+        push di
+        push ax
+        push cx
+    
+        lea si, email
+        xor cx, cx  
+    
+    loop1:
+        mov al, [si]
+        cmp al, '@'
+        je loop2
+        cmp al, '$'
+        je loop5
+        add si,1
+        add cx,1
+        jmp loop1
+    
+    loop2:
+        add si,1
+        add cx,1 
+        
+    loop3:
+        mov al, [si]
+        cmp al, 'g'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'm'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'a'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'i'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'l'
+        jne loop5
+        
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, '.'
+        je loop4
+        cmp al,'$'
+        je loop5
+        add si,1
+        add cx,1
+        jmp loop3
+    
+    loop4:
+        add si,1
+        add cx,1
+        mov al,[si]
+        cmp al,'c'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'o'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, 'm'
+        jne loop5
+        add si,1
+        add cx,1
+        mov al, [si]
+        cmp al, '$'
+        jne loop5
+    
+        clc  
+        jmp done
+    
+    loop5:
+        stc  
+    
+    done:
+        pop cx
+        pop ax
+        pop di
+        pop si
+        ret
+wemail endp
+
+validatepass proc
+        push si
+        push ax
+        push bx
+        push cx
+    
+        lea si,password
+        xor bx,bx  
+        xor cx,cx 
+    
+    char:
+        mov al,[si]
+        cmp al,'$'
+        je check
+    
+        add cx,1 
+    
+        cmp al,'A'
+        jl lowercase
+        cmp al,'Z'
+        jle uppercase1
+    
+    lowercase:
+        cmp al,'a'
+        jl digit
+        cmp al,'z'
+        jle lowercase1
+    
+    digit:
+        cmp al,'0'
+        jl special
+        cmp al, '9'
+        jle digit1
+    
+    special:
+        push si
+        lea si, s_chars
+        
+    special1:
+        mov ah, [si]
+        cmp ah, '$'
+        je nospecial
+        cmp al, ah
+        je special2
+        add si,1
+        jmp special1
+    
+    nospecial:
+        pop si
+        jmp char2
+    
+    uppercase1:
+        or bx,1
+        jmp char2
+    
+    lowercase1:
+        or bx,2
+        jmp char2
+    
+    digit1:
+        or bx,4
+        jmp char2
+    
+    special2:
+        pop si
+        or bx,8
+    
+    char2:
+        add si,1
+        jmp char
+    
+    check:
+        cmp cx,8  
+        jl invalidpass
+        cmp bx,15 
+        jne invalidpass
+    
+        clc  
+        jmp done2
+    
+    invalidpass:
+        stc  
+    
+    done2:
+        pop cx
+        pop bx
+        pop ax
+        pop si
+        ret
+validatepass endp
+
+compare_str proc
+        push ax
+        
+    block1:
+        mov al,[si]
+        cmp al,[di]
+        jne block2
+        cmp al, '$'
+        je equal
+        add si,1
+        add di,1
+        jmp block1
+        
+    equal:
+        xor ax,ax  
+        jmp done3
+        
+    block2:
+        or ax,1
+        
+    done3:
+        pop ax
+        ret  
+        
+compare_str endp
+
+end main
