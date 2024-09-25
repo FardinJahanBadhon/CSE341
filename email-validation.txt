@@ -1,0 +1,91 @@
+.model small
+.stack 100h
+.data
+    email db 50 dup(?)       
+    display db 'Enter email: $'
+    msg1 db 'The email address is valid.$'
+    msg2 db 'Invalid email address. Must contain @gmail.com.$'
+    domain db '@gmail.com$'
+
+.code
+main proc
+    mov ax, @data
+    mov ds, ax
+
+    
+    lea dx,display
+    mov ah,9
+    int 21h
+
+    
+    lea si,email
+    mov cx,0 
+
+char:
+    mov ah,1
+    int 21h
+    cmp al,13 
+    je checker1
+    mov [si],al
+    add si,1
+    add cx,1
+    jmp char
+
+checker1:
+    mov byte ptr [si],'$'  
+    cmp cx,10
+    jl output2
+
+    lea si,email
+    mov di,si 
+    
+loop1:
+    mov al,[si]
+    cmp al,'@'
+    je loop2
+    cmp al, '$'
+    je output2  
+    add si,1
+    jmp loop1
+
+loop2:
+    lea bx,domain
+    
+checker2:
+    mov al,[si]
+    mov dl,[bx]
+    cmp al,dl
+    jne output2  
+    
+    cmp al,'$'
+    je output1 
+    
+    add si,1
+    add bx,1
+    jmp checker2
+
+output1:
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl,0Dh
+    int 21h 
+    
+    lea dx,msg1
+    jmp result
+
+output2:
+    mov ah,2
+    mov dl,0Ah
+    int 21h
+    mov dl,0Dh
+    int 21h
+    lea dx,msg2
+
+result:
+    mov ah,9
+    int 21h
+    
+
+main endp
+end main
